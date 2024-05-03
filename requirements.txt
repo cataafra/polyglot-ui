@@ -1,0 +1,6 @@
+customtkinter
+future
+PyAudio
+sounddevice
+webrtcvad
+numpy
