@@ -15,6 +15,9 @@ def main():
 
     # Initialize the AudioProcessor with a callback to play audio through the specified device
     recorder = AudioProcessor(playback_callback=lambda file_path: play_audio(file_path, output_device))
+    if not recorder.is_online:
+        logging.error("AudioProcessor failed to initialize.")
+        return
 
     try:
         recorder.record_audio_vad()
