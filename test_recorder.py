@@ -1,12 +1,12 @@
 import logging
 from audio_processor import AudioProcessor
-from audio_player import play_audio, get_vb_audio_device
+from audio_player import play_audio, get_vb_audio_device_index
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def main():
-    output_device = get_vb_audio_device()
+    output_device = get_vb_audio_device_index()
     if output_device is not None:
         logging.info(f"Using output device: {output_device}")
     else:

@@ -1,95 +1,66 @@
 import pyaudio
 import wave
+import queue
+import threading
+from utils.audio_utils import get_vb_audio_device_index
 
 
+class AudioPlayer:
+    def __init__(self):
+        self.playback_queue = queue.PriorityQueue()
+        self.player_thread = threading.Thread(target=self.playback_worker, daemon=True)
+        self.player_thread.start()
 
-def get_api_info():
-    """
-    Get the API info and index for the Windows WASAPI audio API.
-    :return: API info and index
-    """
-    p = pyaudio.PyAudio()
-    api_info, api_index = None, 0
-    for i in range(p.get_host_api_count()):
-        current_api_info = p.get_host_api_info_by_index(i)
-        if i == 0:
-            api_info = current_api_info
-        elif current_api_info['name'] == 'Windows WASAPI':
-            api_info, api_index = current_api_info, i
-            break
-    p.terminate()
-    return api_info, api_index
+    def playback_worker(self):
+        """ Continuously play audio files from the queue in the order they were enqueued. """
+        p = pyaudio.PyAudio()
+        last_sequence = 0
+        buffer = {}
 
+        while True:
+            seq, (wav_path, output_device) = self.playback_queue.get()
+            # Wait for the correct sequence if necessary
+            while seq > last_sequence + 1:
+                buffer[seq] = (wav_path, output_device)
+                seq, (wav_path, output_device) = self.playback_queue.get()
 
-def list_input_devices():
-    """
-    List all input devices.
-    :return: list of input devices
-    """
-    p = pyaudio.PyAudio()
-    api_info, api_index = get_api_info()
-    num_devices = api_info.get('deviceCount')
-    input_devices = []
+            self.play_audio_file(wav_path, output_device, p)
+            last_sequence = seq
 
-    for i in range(num_devices):
-        dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
-        if dev_info.get('maxInputChannels') > 0:
-            input_devices.append(dev_info)
-    p.terminate()
-    return input_devices
+            # Check buffer for the next item
+            if last_sequence + 1 in buffer:
+                wav_path, output_device = buffer.pop(last_sequence + 1)
+                self.play_audio_file(wav_path, output_device, p)
+                last_sequence += 1
 
+            self.playback_queue.task_done()
 
-def get_default_input_device():
-    """
-    Get the default input device.
-    :return: default input device info
-    """
-    api_info, api_index = get_api_info()
-    p = pyaudio.PyAudio()
+    def enqueue_audio(self, wav_path, output_device=None, sequence=None):
+        """ Add an audio file to the playback queue. """
+        if output_device is None:
+            output_device = get_vb_audio_device_index()
+        if sequence is None:
+            sequence = self.generate_sequence()  # Implement this method based on timestamp or an incrementing counter
+        self.playback_queue.put((sequence, (wav_path, output_device)))
 
-    default_device = None
-    num_devices = api_info['deviceCount']
-    for i in range(num_devices):
-        dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
-        if dev_info['maxInputChannels'] > 0:
-            if dev_info['structVersion'] == p.get_default_input_device_info()['structVersion']:
-                default_device = dev_info
-                break
-    p.terminate()
-    return default_device
-
-
-
-def get_vb_audio_device():
-    p = pyaudio.PyAudio()
-    for i in range(p.get_device_count()):
-        dev = p.get_device_info_by_index(i)
-        if "CABLE Input" in dev['name']:
-            return i
-    p.terminate()
-    return None
-
-
-def play_audio(wav_path, output_device=None):
-    print("Playing audio...")
-    chunk = 1024
-    wf = wave.open(wav_path, 'rb')
-    p = pyaudio.PyAudio()
-
-    if output_device is None:
-        print(list_input_devices())
-        return
-
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True,
-                    output_device_index=output_device)
-    data = wf.readframes(chunk)
-    while data:
-        stream.write(data)
+    def play_audio_file(self, wav_path, output_device, pyaudio_instance):
+        """ Play an audio file with the specified output device. """
+        wf = wave.open(wav_path, 'rb')
+        stream = pyaudio_instance.open(format=pyaudio_instance.get_format_from_width(wf.getsampwidth()),
+                                       channels=wf.getnchannels(),
+                                       rate=wf.getframerate(),
+                                       output=True,
+                                       output_device_index=output_device)
+        chunk = 1024
         data = wf.readframes(chunk)
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-    print("Audio playback complete.")
+        while data:
+            stream.write(data)
+            data = wf.readframes(chunk)
+        stream.stop_stream()
+        stream.close()
+        wf.close()
+
+    def close_player(self):
+        """ Gracefully close the PyAudio instance and stop the thread. """
+        self.playback_queue.join()  # Ensure all queued audio has been played
+        self.player_thread.join()

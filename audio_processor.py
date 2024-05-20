@@ -7,6 +7,8 @@ import logging
 
 import utils.request_handler as rh
 
+from audio_player import AudioPlayer
+
 # Setup logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
 
@@ -18,6 +20,9 @@ class AudioProcessor:
             logging.error("Connection test failed. Please check if the server is running.")
             self.is_online = True
             return
+
+        # Audio playback handler
+        self.audio_player = AudioPlayer()
 
         # Set the online status
         self.is_online = True
@@ -51,19 +56,16 @@ class AudioProcessor:
         """
         while True:
             audio_data = self.audio_queue.get()
-            print(f"Processing audio data of length {len(audio_data)}")
-            rh.send_request_for_processing(audio_data, self.language, self.playback_callback)
+            processed_audio_path = rh.send_request_for_processing(audio_data, self.language, self.speaker_id)
+            if processed_audio_path:
+                # Queue the processed audio file for playback
+                self.audio_player.enqueue_audio(processed_audio_path)
             self.audio_queue.task_done()
 
     def _callback(self, indata, frames, time, status):
         """
         Callback function for the audio input stream.
-        :param indata: waveform data from the input stream
-        :param frames: frame count
-        :param time: time
-        :param status: input status
         """
-
         if status and status.input_overflow:
             logging.warning("Input overflow detected")
 
@@ -80,52 +82,42 @@ class AudioProcessor:
 
     def record_audio_vad(self):
         """
-        Start recording audio using the VAD.
+        Start recording audio using VAD.
         """
         logging.info("Starting audio recording... Press Ctrl+C to stop.")
-        with sd.InputStream(callback=self._callback, device=self.input_device, channels=1, samplerate=self.samplerate,
+        with sd.InputStream(callback=self._callback, device=self.input_device["index"], channels=int(self.input_device["maxInputChannels"]),
+                            samplerate=self.samplerate,
                             blocksize=self.blocksize, dtype='int16'):
             while True:
                 sd.sleep(100)
 
     def start_recording(self):
         """
-        Start recording audio using the VAD. Used for the GUI.
+        Start recording audio, checks for device and language settings.
         """
-        if not self.is_online:
-            logging.error("AudioProcessor is not online.")
+        if not self.is_online or not self.language or not self.input_device:
+            logging.error("AudioProcessor configuration incomplete.")
             return
-
-        if not self.language:
-            logging.error("Language not set.")
-            return
-
-        if not self.input_device:
-            logging.error("Input device not set.")
-            return
-
-        self.audio_queue.queue.clear()
-        self.buffer = np.array([], dtype=np.int16)
-        self.pause_counter = 0
         self.record_audio_vad()
 
     def stop_recording(self):
         """
-        Stop recording audio. Used for the GUI.
+        Stop recording and clean up the audio queue.
         """
-        self.audio_queue.join()
+        self.audio_queue.join()  # Ensure all processing is completed
         logging.info("Recording stopped.")
-        return self.buffer.tobytes()
 
     # Getters and setters
     def get_input_device(self):
         return self.input_device
 
     def set_input_device(self, input_device):
+        print(f"Setting input device to {input_device}")
         self.input_device = input_device
 
     def get_language(self):
         return self.language
 
     def set_language(self, language):
+        print(f"Setting language to {language}")
         self.language = language
