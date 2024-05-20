@@ -8,11 +8,11 @@ BASE_URL = 'http://localhost:80/'
 
 
 def send_request_for_connection_test():
-    url = BASE_URL
+    url = BASE_URL + "health/"
     try:
         response = requests.get(url)
 
-        if response.status_code == 200:
+        if response.status_code == 200 and response.json()["status"]:
             logging.info("Connection test successful")
             return True
         else:

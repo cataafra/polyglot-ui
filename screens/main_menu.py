@@ -4,7 +4,7 @@ from tkinter import ttk, PhotoImage
 import sv_ttk
 from ctypes import windll, byref, sizeof, c_int
 
-from audio_player import list_input_devices, get_default_input_device
+from utils.audio_utils import list_input_devices, get_default_input_device
 from utils.constants import TARGET_LANGUAGES
 from audio_processor import AudioProcessor
 
@@ -38,6 +38,8 @@ class MainMenu:
         self.info_frame = None
         self.setup_ui()
         self.processor = audio_processor
+
+        print(list_input_devices())
 
     def setup_ui(self):
         # Set the theme
@@ -118,7 +120,7 @@ class MainMenu:
         self.device_menu = ttk.Combobox(settings_frame, textvariable=self.device_var, state="readonly", width=30)
         self.device_menu.grid(column=0, row=2, sticky=tk.EW, padx=(0, 10))
         self.device_menu['values'] = [dev.get('name') for dev in list_input_devices()]
-        self.device_menu.bind('<<ComboboxSelected>>', self.on_combobox_select)
+        self.device_menu.bind('<<ComboboxSelected>>', self.on_device_select)
         self.device_menu.bind("<MouseWheel>", lambda e: "break")
         self.device_menu = ttk.Combobox(settings_frame, textvariable=self.device_var, state="readonly", width=30,
                                         style='Custom.TCombobox')
@@ -130,7 +132,7 @@ class MainMenu:
         self.language_menu = ttk.Combobox(settings_frame, textvariable=self.language_var, state="readonly", width=30)
         self.language_menu.grid(column=0, row=4, sticky=tk.EW, padx=(0, 10))
         self.language_menu['values'] = list(TARGET_LANGUAGES.keys())
-        self.language_menu.bind('<<ComboboxSelected>>', self.on_combobox_select)
+        self.language_menu.bind('<<ComboboxSelected>>', self.on_language_select)
         self.language_menu.bind("<MouseWheel>", lambda e: "break")
         self.language_menu = ttk.Combobox(settings_frame, textvariable=self.language_var, state="readonly", width=30,
                                           style='Custom.TCombobox')
@@ -144,7 +146,7 @@ class MainMenu:
         self.voice_menu = ttk.Combobox(settings_frame, textvariable=self.voice_var, state="readonly", width=30)
         self.voice_menu.grid(column=1, row=2, sticky=tk.EW, padx=(10, 0))
         self.voice_menu['values'] = ('Voice 1', 'Voice 2')
-        self.voice_menu.bind('<<ComboboxSelected>>', self.on_combobox_select)
+        self.voice_menu.bind('<<ComboboxSelected>>', self.on_voice_select)
         self.voice_menu.bind("<MouseWheel>", lambda e: "break")
         self.voice_menu = ttk.Combobox(settings_frame, textvariable=self.voice_var, state="readonly", width=30,
                                        style='Custom.TCombobox')
@@ -252,11 +254,11 @@ class MainMenu:
 
     def start_recording(self):
         # Add logic for starting recording with AudioProcessor
-        self.recording.start_recording()
+        self.processor.start_recording()
 
     def stop_recording(self):
         # Add logic for stopping recording with AudioProcessor
-        self.recording.stop_recording()
+        self.processor.stop_recording()
 
     def on_combobox_select(self, event):
         try:
@@ -264,6 +266,37 @@ class MainMenu:
         except AttributeError:
             pass
         self.root.focus_set()
+
+    def update_processor_settings(self, setting_type, selected_option):
+        if setting_type == 'device':
+            input_devices = list_input_devices()
+            for device in input_devices:
+                if device.get('name') == selected_option:
+                    self.processor.set_input_device(device)
+                else:
+                    self.processor.set_input_device(get_default_input_device())
+
+        elif setting_type == 'language':
+            self.processor.set_language(TARGET_LANGUAGES.get(selected_option))
+
+        elif setting_type == 'voice':
+            # get only the index from the selected voice
+            self.processor.set_voice(selected_option.split()[-1])
+
+    def on_device_select(self, event):
+        selected_device = self.device_var.get()
+        self.update_processor_settings('device', selected_device)
+        self.on_combobox_select(event)
+
+    def on_language_select(self, event):
+        selected_language = self.language_var.get()
+        self.update_processor_settings('language', selected_language)
+        self.on_combobox_select(event)
+
+    def on_voice_select(self, event):
+        selected_voice = self.voice_var.get()
+        self.update_processor_settings('voice', selected_voice)
+        self.on_combobox_select(event)
 
     def open_settings(self):
         pass
