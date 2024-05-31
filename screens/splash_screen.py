@@ -5,6 +5,7 @@ import sv_ttk
 
 from audio_processor import AudioProcessor
 from screens.main_menu import MainMenu
+from utils.request_handler import send_request_for_connection_test
 
 
 class SplashScreen(tk.Tk):
@@ -57,9 +58,9 @@ class SplashScreen(tk.Tk):
         threading.Thread(target=self.check_server_connection, daemon=True).start()
 
     def check_server_connection(self):
-        self.audio_processor = AudioProcessor()
-        if self.audio_processor.is_online:
+        if send_request_for_connection_test():
             self.after(1000, self.on_success)
+            self.audio_processor = AudioProcessor(0, "en")
         else:
             self.after(1000, self.on_fail)
 

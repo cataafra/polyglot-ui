@@ -14,52 +14,29 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(m
 
 
 class AudioProcessor:
-    def __init__(self, input_device=None, language=None, speaker_id=0, vad_aggressiveness=3, playback_callback=None):
-        # Check if the server is running
-        if not rh.send_request_for_connection_test():
-            logging.error("Connection test failed. Please check if the server is running.")
-            self.is_online = True
-            return
-
-        # Audio playback handler
+    def __init__(self, input_device=None, language='en', speaker_id=0, vad_aggressiveness=3):
         self.audio_player = AudioPlayer()
-
-        # Set the online status
-        self.is_online = True
-
-        # Basic audio processing setup
         self.input_device = input_device
+        self.language = language
+        self.speaker_id = speaker_id
         self.vad = webrtcvad.Vad(vad_aggressiveness)
+        self.pause_counter = 0
         self.samplerate = 16000
         self.frame_duration = 30
         self.blocksize = int(self.samplerate * self.frame_duration / 1000)
         self.audio_queue = queue.Queue()
         self.buffer = np.array([], dtype=np.int16)
-        self.pause_counter = 0
-        self.playback_callback = playback_callback
-
-        # Start the audio processing thread
         self.processing_thread = threading.Thread(target=self.process_audio, daemon=True)
         self.processing_thread.start()
-
-        # Set the target language for translation
-        self.language = language
-
-        # Set the speaker ID for the audio
-        self.speaker_id = speaker_id
 
         logging.info("AudioRecorder initialized")
 
     def process_audio(self):
-        """
-        Process audio data from the audio queue and send it to the server for processing.
-        """
         while True:
             audio_data = self.audio_queue.get()
-            processed_audio_path = rh.send_request_for_processing(audio_data, self.language, self.speaker_id)
-            if processed_audio_path:
-                # Queue the processed audio file for playback
-                self.audio_player.enqueue_audio(processed_audio_path)
+            audio_stream = rh.send_request_for_processing(audio_data, self.language, self.speaker_id)
+            if audio_stream:
+                self.audio_player.enqueue_audio(audio_stream)
             self.audio_queue.task_done()
 
     def _callback(self, indata, frames, time, status):
@@ -84,20 +61,27 @@ class AudioProcessor:
         """
         Start recording audio using VAD.
         """
-        logging.info("Starting audio recording... Press Ctrl+C to stop.")
-        with sd.InputStream(callback=self._callback, device=self.input_device["index"], channels=int(self.input_device["maxInputChannels"]),
-                            samplerate=self.samplerate,
-                            blocksize=self.blocksize, dtype='int16'):
-            while True:
-                sd.sleep(100)
+        logging.info(f"Starting audio recording... Press Ctrl+C to stop.")
+        logging.debug(
+            f"Using device: {self.input_device['name']} with {self.input_device['maxInputChannels']} input channels")
+        try:
+            with sd.InputStream(callback=self._callback, device=self.input_device["index"],
+                                channels=1,
+                                samplerate=self.samplerate,
+                                blocksize=self.blocksize, dtype='int16'):
+                while True:
+                    sd.sleep(100)
+        except Exception as e:
+            logging.error(f"Failed to start audio stream: {str(e)}")
 
     def start_recording(self):
         """
         Start recording audio, checks for device and language settings.
         """
-        if not self.is_online or not self.language or not self.input_device:
+        if not self.language or not self.input_device:
             logging.error("AudioProcessor configuration incomplete.")
             return
+
         self.record_audio_vad()
 
     def stop_recording(self):
@@ -121,3 +105,10 @@ class AudioProcessor:
     def set_language(self, language):
         print(f"Setting language to {language}")
         self.language = language
+
+    def get_speaker_id(self):
+        return self.speaker_id
+
+    def set_speaker_id(self, speaker_id):
+        print(f"Setting speaker ID to {speaker_id}")
+        self.speaker_id = speaker_id

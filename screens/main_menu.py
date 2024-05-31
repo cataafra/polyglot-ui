@@ -1,3 +1,4 @@
+import threading
 import tkinter as tk
 import webbrowser
 from tkinter import ttk, PhotoImage
@@ -37,6 +38,9 @@ class MainMenu:
         self.main_frame = None
         self.info_frame = None
         self.setup_ui()
+
+        # Initialize the processing-related variables
+        self.server_status = None
         self.processor = audio_processor
 
         print(list_input_devices())
@@ -245,19 +249,18 @@ class MainMenu:
             self.recording.set(True)
             self.record_button.config(text="Stop Recording")
             self.status.config(text="Recording...")
-            self.start_recording()
+            threading.Thread(target=self.start_recording, daemon=True).start()
         else:
             self.recording.set(False)
             self.record_button.config(text="Start Recording")
             self.status.config(text="Recording Stopped.")
-            self.stop_recording()
+            threading.Thread(target=self.stop_recording, daemon=True).start()
 
     def start_recording(self):
         # Add logic for starting recording with AudioProcessor
         self.processor.start_recording()
 
     def stop_recording(self):
-        # Add logic for stopping recording with AudioProcessor
         self.processor.stop_recording()
 
     def on_combobox_select(self, event):
@@ -280,8 +283,7 @@ class MainMenu:
             self.processor.set_language(TARGET_LANGUAGES.get(selected_option))
 
         elif setting_type == 'voice':
-            # get only the index from the selected voice
-            self.processor.set_voice(selected_option.split()[-1])
+            self.processor.set_speaker_id(selected_option.split()[-1])
 
     def on_device_select(self, event):
         selected_device = self.device_var.get()
