@@ -4,10 +4,11 @@ import requests
 import logging
 from datetime import datetime
 
-BASE_URL = 'http://localhost:8000/'
+BASE_URL = 'http://localhost:80/'
 
 
 def send_request_for_connection_test():
+    """ Check if the server is running and can be reached."""
     url = BASE_URL + "health/"
     try:
         response = requests.get(url)
@@ -24,6 +25,7 @@ def send_request_for_connection_test():
 
 
 def send_request_for_processing(audio_data, language, speaker_id, save_to_disk=False):
+    """ Send audio data to the server for processing and return the response."""
     url = BASE_URL + 'process/'
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 

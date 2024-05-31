@@ -1,6 +1,6 @@
 import logging
-from audio_processor import AudioProcessor
-from audio_player import play_audio, get_vb_audio_device_index
+from audio.audio_processor import AudioProcessor
+from audio.audio_player import play_audio, get_vb_audio_device_index
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 

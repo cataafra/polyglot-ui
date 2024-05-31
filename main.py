@@ -1,5 +1,5 @@
-from screens.splash_screen import SplashScreen
+from gui.splash_screen import SplashScreen
 
 if __name__ == "__main__":
-    app = SplashScreen()
+    app = SplashScreen(debug=True)
     app.mainloop()

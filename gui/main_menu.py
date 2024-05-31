@@ -3,11 +3,11 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk, PhotoImage
 import sv_ttk
-from ctypes import windll, byref, sizeof, c_int
 
-from utils.audio_utils import list_input_devices, get_default_input_device
+
+from gui.styles import center_window, color_title_bar, set_theme, setup_styles
+from audio.audio_utils import list_input_devices, get_default_input_device
 from utils.constants import TARGET_LANGUAGES
-from audio_processor import AudioProcessor
 
 
 class MainMenu:
@@ -16,11 +16,9 @@ class MainMenu:
         self.root.title("Polyglot App")
         self.root.iconbitmap("assets/polyglot-icon.ico")
         self.root.resizable(True, True)  # Allow window resizing
+        self.root.after(100, self.root.deiconify)  # Display the window after setup
+        center_window(self.root, 800, 460)  # Center window on the screen
 
-        # Display the window after setup
-        self.root.after(100, self.root.deiconify)
-        self.center_window(800, 460)  # Center window on the screen
-        self.color_title_bar()  # Customize title bar color
 
         # Initialize key variables
         self.recording = None
@@ -43,26 +41,21 @@ class MainMenu:
         self.server_status = None
         self.processor = audio_processor
 
-        print(list_input_devices())
-
     def setup_ui(self):
         # Set the theme
-        sv_ttk.set_theme("dark")
+        set_theme()
 
-        # Custom style for combobox
-        style = ttk.Style()
-        style.configure("Custom.TCombobox", padding=10, fieldrelief="flat", fieldbackground="white", foreground="black")
-        style.map("Custom.TCombobox", fieldbackground=[("readonly", "white")])
+        # Set up custom styles
+        setup_styles()
 
-        # Custom style for recording button
-        style.configure("Recording.TButton", font=('', 18), foreground="white", background="red",
-                        borderwidth=2, relief="raised", padding=10)
-        style.map("Recording.TButton", background=[("active", "blue"), ("disabled", "grey")])
+        # Customize title bar color
+        color_title_bar(self.root)
 
-        # Initialize frames for the main menu and the info page
+        # Initialize frame for the main menu
         self.main_frame = ttk.Frame(self.root, padding="20")
         self.main_frame.grid(column=0, row=0, sticky=tk.NSEW)
 
+        # Initialize frame for the info page
         self.info_frame = ttk.Frame(self.root, padding="20")
         self.info_frame.grid(column=0, row=0, sticky=tk.NSEW)
         self.info_frame.grid_remove()
@@ -74,7 +67,7 @@ class MainMenu:
         self.setup_info_page()
 
     def setup_main_menu(self):
-        # Main frame setup with padding for better spacing
+        # Main frame setup with padding
         frame = self.main_frame
         frame.columnconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
@@ -174,7 +167,7 @@ class MainMenu:
         self.server_status = ttk.Label(status_frame, text="✔️ Server Online", anchor=tk.E)
         self.server_status.grid(column=1, row=1, columnspan=1, sticky=tk.E, pady=(10, 20))
 
-        # Bind mouse wheel to comboboxes
+        # Bind mouse wheel to combo boxes
         self.root.bind("<Button-1>", self.on_combobox_select)
 
     def setup_info_page(self):
@@ -226,24 +219,6 @@ class MainMenu:
         self.info_frame.grid_remove()
         self.main_frame.grid()
 
-    def center_window(self, width, height):
-        # Calculate position x, y
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = int((screen_width / 2) - (width / 2))
-        y = int((screen_height / 2) - (height / 2))
-        self.root.geometry(f'{width}x{height}+{x}+{y}')
-
-    def color_title_bar(self):
-        try:
-            hwnd = windll.user32.GetParent(self.root.winfo_id())
-            title_bar_color = 0x001C1C1C
-            title_text_color = 0x00FFFFFF
-            windll.dwmapi.DwmSetWindowAttribute(hwnd, 35, byref(c_int(title_bar_color)), sizeof(c_int))
-            windll.dwmapi.DwmSetWindowAttribute(hwnd, 36, byref(c_int(title_text_color)), sizeof(c_int))
-        except:
-            pass
-
     def toggle_recording(self):
         if not self.recording.get():
             self.recording.set(True)
@@ -257,7 +232,6 @@ class MainMenu:
             threading.Thread(target=self.stop_recording, daemon=True).start()
 
     def start_recording(self):
-        # Add logic for starting recording with AudioProcessor
         self.processor.start_recording()
 
     def stop_recording(self):

@@ -24,7 +24,7 @@ def get_default_input_device():
     """
     p = pyaudio.PyAudio()
     default_device_index = p.get_default_input_device_info()['index']
-    default_device = p.get_device_info_by_index(default_device_index)
+    default_device = p.get_device_info_by_index(int(default_device_index))
     p.terminate()
     return default_device
 

@@ -5,15 +5,18 @@ import threading
 import queue
 import logging
 
-import utils.request_handler as rh
+from network.request_handler import send_request_for_processing
 
-from audio_player import AudioPlayer
+from audio.audio_player import AudioPlayer
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
 
 
 class AudioProcessor:
+    """
+    Audio processor class for recording audio and sending it to the server for processing.
+    """
     def __init__(self, input_device=None, language='en', speaker_id=0, vad_aggressiveness=3):
         self.audio_player = AudioPlayer()
         self.input_device = input_device
@@ -32,9 +35,12 @@ class AudioProcessor:
         logging.info("AudioRecorder initialized")
 
     def process_audio(self):
+        """
+        Process audio data from the audio queue.
+        """
         while True:
             audio_data = self.audio_queue.get()
-            audio_stream = rh.send_request_for_processing(audio_data, self.language, self.speaker_id)
+            audio_stream = send_request_for_processing(audio_data, self.language, self.speaker_id)
             if audio_stream:
                 self.audio_player.enqueue_audio(audio_stream)
             self.audio_queue.task_done()
@@ -93,22 +99,40 @@ class AudioProcessor:
 
     # Getters and setters
     def get_input_device(self):
+        """
+        Get the input device.
+        """
         return self.input_device
 
     def set_input_device(self, input_device):
+        """
+        Set the input device.
+        """
         print(f"Setting input device to {input_device}")
         self.input_device = input_device
 
     def get_language(self):
+        """
+        Get the language.
+        """
         return self.language
 
     def set_language(self, language):
+        """
+        Set the language.
+        """
         print(f"Setting language to {language}")
         self.language = language
 
     def get_speaker_id(self):
+        """
+        Get the speaker ID.
+        """
         return self.speaker_id
 
     def set_speaker_id(self, speaker_id):
+        """
+        Set the speaker ID.
+        """
         print(f"Setting speaker ID to {speaker_id}")
         self.speaker_id = speaker_id
