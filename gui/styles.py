@@ -3,17 +3,19 @@ import sv_ttk
 from tkinter import ttk
 from ctypes import windll, byref, sizeof, c_int
 
-from gui.colors import colors
+from config.config import config
 
 
 def set_theme():
     """ Set the global theme for the application. """
-    sv_ttk.set_theme("dark")
+    sv_ttk.set_theme(config.get("gui", "default_theme"))
 
 
-def toggle_theme():
+def toggle_theme(root):
     """ Toggle the global theme for the application. """
     sv_ttk.toggle_theme()
+    color_title_bar(root)
+    setup_styles()
 
 
 def get_theme():
@@ -29,13 +31,15 @@ def setup_styles():
     style.configure("Custom.TCombobox", padding=10, fieldrelief="flat", fieldbackground="white", foreground="black")
     style.map("Custom.TCombobox", fieldbackground=[("readonly", "white")])
 
+
+
     # Custom style for recording button
-    style.configure("Recording.TButton", font=('', 18), foreground="white", background="red",
+    style.configure("Recording.TButton", font=('', 18),
                     borderwidth=2, relief="raised", padding=10)
-    style.map("Recording.TButton", background=[("active", "blue"), ("disabled", "grey")])
 
 
 def center_window(root, width, height):
+    """ Center the window on the screen. """
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = int((screen_width / 2) - (width / 2))
@@ -45,11 +49,12 @@ def center_window(root, width, height):
 
 def color_title_bar(root):
     def convert_color(color_code):
-        """ Convert color code to a format that can be used by the application."""
+        """ Convert color code to a format that can be used by the Windows API."""
         formatted_color = color_code[1:].upper()
         return int(f'0x00{formatted_color}', 16)
 
     current_theme = get_theme()
+    colors = config.get("gui", "colors")
     color = convert_color(colors["background"][current_theme])
     text_color = convert_color(colors["text"][current_theme])
 

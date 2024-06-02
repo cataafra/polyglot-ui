@@ -1,0 +1,37 @@
+{
+  "general": {
+    "debug": "false"
+  },
+  "api": {
+    "base_url": "http://localhost:80/",
+    "health_endpoint": "health/",
+    "process_endpoint": "process/"
+  },
+  "audio": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "frame_duration_ms": 30,
+    "vad_aggressiveness": 3
+  },
+  "gui": {
+    "main_menu": {
+      "window_size": "800x480",
+      "title": "Polyglot App"
+    },
+    "splash_screen": {
+      "window_size": "400x400"
+    },
+    "default_theme": "dark",
+    "colors": {
+      "background": {
+        "light": "#f0f0f0",
+        "dark": "#1c1c1c"
+      },
+      "text": {
+        "light": "#000000",
+        "dark": "#ffffff"
+      },
+      "accent": "#00a9ad"
+    }
+  }
+}
