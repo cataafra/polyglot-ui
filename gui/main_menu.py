@@ -150,7 +150,7 @@ class MainMenu:
         self.voice_menu = ttk.Combobox(settings_frame, textvariable=self.voice_var, state="readonly", width=30,
                                        style='Custom.TCombobox')
         self.voice_menu.grid(column=1, row=2, sticky=tk.EW, padx=(10, 0))
-        self.voice_menu['values'] = ('Voice 1', 'Voice 2')
+        self.voice_menu['values'] = ('Voice 1', 'Voice 2', 'Voice 3')
         self.voice_menu.bind('<<ComboboxSelected>>', self.on_voice_select)
         self.voice_menu.bind("<MouseWheel>", lambda e: "break")
 
@@ -272,7 +272,7 @@ class MainMenu:
             self.processor.set_language(TARGET_LANGUAGES.get(selected_option))
 
         elif setting_type == 'voice':
-            self.processor.set_speaker_id(selected_option.split()[-1])
+            self.processor.set_speaker_id(str(self.voice_menu['values'].index(selected_option)))
 
     def on_device_select(self, event):
         selected_device = self.device_var.get()

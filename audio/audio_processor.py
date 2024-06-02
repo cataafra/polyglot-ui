@@ -32,12 +32,9 @@ class AudioProcessor:
         self.blocksize = int(self.samplerate * self.frame_duration / 1000)
         self.audio_queue = queue.Queue()
         self.buffer = np.array([], dtype=np.int16)
-        # self.processing_thread = threading.Thread(target=self.process_audio, daemon=True)
-        # self.processing_thread.start()
 
         self.processing_thread = None
         self.is_recording = False
-        self.stream = None
 
         logger.info("AudioProcessor successfully initialized.")
 
@@ -93,9 +90,10 @@ class AudioProcessor:
         Start recording audio, checks for device and language settings.
         """
         if not self.language or not self.input_device:
-            logger.error("AudioProcessor configuration incomplete.")
+            logger.error("Cannot start recording. AudioProcessor configuration incomplete.")
             return
 
+        self.audio_player.start_player()
         self.processing_thread = threading.Thread(target=self.process_audio, daemon=True)
         self.processing_thread.start()
         self.record_audio_vad()
@@ -107,6 +105,7 @@ class AudioProcessor:
         self.is_recording = False
         self.audio_queue.put(None)
         self.processing_thread.join()
+        self.audio_player.stop_player()
         logger.info("Recording stopped.")
 
     # Getters and setters
