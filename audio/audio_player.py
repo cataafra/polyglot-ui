@@ -44,6 +44,8 @@ class AudioPlayer:
             if item is None:  # Check for the sentinel value to stop processing
                 break
             seq, (audio_stream, output_device) = item
+            if audio_stream is None:
+                break
             self.play_audio_stream(audio_stream, output_device)
             self.playback_queue.task_done()
         self.cleanup()

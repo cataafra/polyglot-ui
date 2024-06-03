@@ -4,3 +4,5 @@ PyAudio
 sounddevice
 webrtcvad
 numpy
+pytest
+requests

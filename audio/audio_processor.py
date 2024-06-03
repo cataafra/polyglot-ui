@@ -75,7 +75,6 @@ class AudioProcessor:
         """
         logger.info(f"Starting audio recording...")
         try:
-            self.is_recording = True
             with sd.InputStream(callback=self._callback, device=self.input_device["index"],
                                 channels=1,
                                 samplerate=self.samplerate,
@@ -93,6 +92,7 @@ class AudioProcessor:
             logger.error("Cannot start recording. AudioProcessor configuration incomplete.")
             return
 
+        self.is_recording = True
         self.audio_player.start_player()
         self.processing_thread = threading.Thread(target=self.process_audio, daemon=True)
         self.processing_thread.start()

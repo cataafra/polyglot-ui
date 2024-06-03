@@ -1,6 +1,7 @@
 import wave
 from io import BytesIO
 import requests
+import urllib3
 import logging
 from datetime import datetime
 
@@ -15,7 +16,8 @@ def send_request_for_connection_test():
     url = config.get("api", "base_url") + config.get("api", "health_endpoint")
     logger.info("Testing connection to server...")
     try:
-        response = requests.get(url)
+        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+        response = requests.get(url, verify=False)
 
         if response.status_code == 200 and response.json()["status"]:
             logger.info("Connection test successful")
@@ -31,6 +33,7 @@ def send_request_for_connection_test():
 def send_request_for_processing(audio_data, language, speaker_id, save_to_disk=False):
     """ Send audio data to the server for processing and return the response."""
     url = config.get("api", "base_url") + config.get("api", "process_endpoint")
+    save_to_disk = config.getboolean("audio", "save_to_disk")
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 
     # Prepare the in-memory WAV file
@@ -45,7 +48,8 @@ def send_request_for_processing(audio_data, language, speaker_id, save_to_disk=F
     files = {'file': ('audio.wav', buffer, 'audio/wav')}
     data = {'language': language, 'speaker_id': str(speaker_id)}
 
-    response = requests.post(url, files=files, data=data)
+    urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+    response = requests.post(url, files=files, data=data, verify=False)
     if response.status_code == 200:
         logger.info("Audio processed successfully.")
 

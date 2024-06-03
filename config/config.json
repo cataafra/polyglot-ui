@@ -1,9 +1,11 @@
 {
   "general": {
-    "debug": "false"
+    "debug": "false",
+    "save_logs": "false",
+    "log_file": "logs/polyglot.log"
   },
   "api": {
-    "base_url": "http://localhost:80/",
+    "base_url": "https://ec2-13-51-173-140.eu-north-1.compute.amazonaws.com/",
     "health_endpoint": "health/",
     "process_endpoint": "process/"
   },
@@ -11,7 +13,8 @@
     "sample_rate": 16000,
     "channels": 1,
     "frame_duration_ms": 30,
-    "vad_aggressiveness": 3
+    "vad_aggressiveness": 3,
+    "save_to_disk": "false"
   },
   "gui": {
     "main_menu": {
