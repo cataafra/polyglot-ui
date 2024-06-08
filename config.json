@@ -1,6 +1,6 @@
 {
   "general": {
-    "debug": "false",
+    "debug": "true",
     "save_logs": "false",
     "log_file": "logs/polyglot.log"
   },
@@ -19,7 +19,7 @@
   },
   "gui": {
     "main_menu": {
-      "window_size": "800x480",
+      "window_size": "800x500",
       "title": "Polyglot App"
     },
     "splash_screen": {

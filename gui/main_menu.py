@@ -1,7 +1,7 @@
 import threading
 import tkinter as tk
 import webbrowser
-from PIL import Image, ImageTk
+from PIL import Image
 from pystray import Icon, MenuItem, Menu
 from tkinter import ttk, PhotoImage
 
@@ -41,6 +41,10 @@ class MainMenu:
         self.voice_menu = None
         self.status = None
         self.logo = PhotoImage(file="assets/polyglot-logo.png").subsample(4)
+        self.record_icon = None
+        self.email_entry = None
+        self.subject_entry = None
+        self.message_text = None
 
         # Set up both the main menu and info page
         self.main_frame = None
@@ -175,7 +179,7 @@ class MainMenu:
         self.record_icon = PhotoImage(file="assets/record-icon.png").subsample(2)
         self.record_button = ttk.Button(frame, text="  Start Recording", command=self.toggle_recording,
                                         style="Recording.TButton", image=self.record_icon, compound=tk.LEFT)
-        self.record_button.grid(column=0, row=2, columnspan=2, sticky=tk.EW, pady=(50, 0))
+        self.record_button.grid(column=0, row=2, columnspan=2, sticky=tk.NSEW, pady=(70, 0))
 
         # Status bar frame
         status_frame = ttk.Frame(frame)
@@ -190,10 +194,18 @@ class MainMenu:
         self.server_status = ttk.Label(status_frame, text="✅ Server Online", anchor=tk.E)
         self.server_status.grid(column=1, row=1, columnspan=1, sticky=tk.E, pady=(10, 20))
 
-        # Bind mouse wheel to combo boxes
-        self.root.bind("<Button-1>", self.disable_focus_on_click)
-
     def setup_info_page(self):
+        def on_entry_focus_in(entry):
+            if entry.get() == "Email address" or entry.get() == "Subject":
+                entry.configure(state='normal')
+                entry.delete(0, 'end')
+
+        def on_entry_focus_out(entry, placeholder):
+            if entry.get() == "":
+                entry.insert(0, placeholder)
+                entry.configure(state='disabled')
+
+
         frame = self.info_frame
 
         # Configure the grid for the info frame
@@ -201,20 +213,16 @@ class MainMenu:
 
         # Title bar with logo and title
         title_frame = ttk.Frame(frame)
-        title_frame.grid(column=0, row=0, sticky=tk.W, padx=0, pady=(10, 0))
+        title_frame.grid(column=0, row=0, sticky=tk.W, padx=0, pady=(25, 0))
 
-        logo_label = ttk.Label(title_frame, image=self.logo)
-        logo_label.grid(column=0, row=0, sticky=tk.W, padx=0, pady=(0, 10))
-        logo_label.image = self.logo
+        back_button = ttk.Button(title_frame, text="←", command=self.show_main_menu)
+        back_button.grid(column=0, row=0, sticky=tk.W, padx=0, pady=(0, 12))
 
-        title_label = ttk.Label(title_frame, text="Information", font=("", 24))
-        title_label.grid(column=1, row=0, sticky=tk.SW, padx=(20, 0), pady=(0, 10))
+        title_label = ttk.Label(title_frame, text="Information & Help", font=("", 24))
+        title_label.grid(column=2, row=0, sticky=tk.SW, padx=(20, 0), pady=(0, 10))
 
         # Info text
-        info_text = ttk.Label(frame,
-                              text="The Polyglot app was developed with ♥ by @cataafra - " +
-                                   "Catalin Afrasinei \nas part of his Bachelor's Degree in " +
-                                   "Computer Science at the Universitatea Babes-Bolyai. ")
+        info_text = ttk.Label(frame, text="Polyglot, version 1.0 - developed with ♥ by @cataafra")
         info_text.grid(column=0, row=1, sticky=tk.W, padx=0, pady=(10, 10))
 
         # Subtitle for social media section
@@ -233,9 +241,35 @@ class MainMenu:
                                    command=lambda: webbrowser.open("https://github.com/cataafra"))
         github_button.grid(column=2, row=1, sticky=tk.W, padx=5)
 
-        # Back button
-        back_button = ttk.Button(frame, text="Back to Dashboard", command=self.show_main_menu)
-        back_button.grid(column=0, row=5, sticky=tk.W, padx=0, pady=(20, 10))
+        # Email section
+        email_frame = ttk.Frame(frame)
+        email_frame.grid(column=0, row=4, sticky=tk.EW, pady=20)
+        email_frame.columnconfigure(0, weight=1)
+
+        # Email subtitle
+        email_subtitle = ttk.Label(email_frame, text="Having issues?", font=("", 16))
+        email_subtitle.grid(column=0, row=0, sticky=tk.W, padx=0, pady=(0, 10))
+
+        # Email entry fields
+        self.email_entry = ttk.Entry(email_frame)
+        self.email_entry.grid(column=0, row=1, sticky=tk.EW)
+        self.email_entry.insert(0, "Email address")
+        self.email_entry.configure(state='disabled')
+        self.email_entry.bind("<Button-1>", lambda e: on_entry_focus_in(self.email_entry))
+        self.email_entry.bind("<FocusOut>", lambda e: on_entry_focus_out(self.email_entry, "Email address"))
+
+        self.subject_entry = ttk.Entry(email_frame)
+        self.subject_entry.grid(column=0, row=2, sticky=tk.EW, pady=(10, 10))
+        self.subject_entry.insert(0, "Subject")
+        self.subject_entry.configure(state='disabled')
+        self.subject_entry.bind("<Button-1>", lambda e: on_entry_focus_in(self.subject_entry))
+        self.subject_entry.bind("<FocusOut>", lambda e: on_entry_focus_out(self.subject_entry, "Subject"))
+
+        self.message_text = tk.Text(email_frame, height=3)
+        self.message_text.grid(column=0, row=3, sticky=tk.EW)
+
+        send_button = ttk.Button(email_frame, text="Send us an email ▶", command=self.send_email)
+        send_button.grid(column=0, row=4, sticky=tk.E, pady=(10, 0))
 
     def open_info(self):
         self.main_frame.grid_remove()
@@ -267,13 +301,6 @@ class MainMenu:
 
     def stop_recording(self):
         self.processor.stop_recording()
-
-    def disable_focus_on_click(self, event):
-        try:
-            event.widget.select_clear()
-        except AttributeError:
-            pass
-        self.root.focus_set()
 
     def update_processor_settings(self, setting_type, selected_option):
         if setting_type == 'device':
@@ -307,11 +334,13 @@ class MainMenu:
         self.update_processor_settings('voice', selected_voice)
         event.widget.select_clear()
 
+    def create_trey_icon(self):
+        self.tray_icon = Icon('Polyglot App', self.tray_icon_image, 'Polyglot App', menu=self.tray_menu)
+        self.tray_icon.icon.left_click = self.show_from_tray
+
     def hide_window_to_tray(self):
         self.root.withdraw()  # Hide the Tkinter window
-        self.tray_icon = Icon('Polyglot App', self.tray_icon_image, 'Polyglot App', menu=self.tray_menu)
-        self.tray_icon.icon.menu = self.tray_menu
-        self.tray_icon.icon.left_click = self.show_from_tray
+        self.create_trey_icon()
         self.tray_icon.run()
 
     def show_from_tray(self, icon=None, item=None):
@@ -321,3 +350,28 @@ class MainMenu:
     def exit_from_tray(self, icon=None, item=None):
         self.tray_icon.stop()
         self.root.destroy()  # Finally close the application
+
+    def send_email(self):
+        """Function to send an email."""
+        subject = self.subject_entry.get()
+        body = self.message_text.get("1.0", tk.END)
+        # Replace spaces with '%20' and new lines with '%0A' for URL encoding
+        body = body.replace(' ', '%20').replace('\n', '%0A')
+
+        # Set your recipient email address here
+        recipient_email = "support@example.com"
+
+        # Create the mailto URL
+        url = f"mailto:{recipient_email}?subject={subject}&body={body}"
+        webbrowser.open(url)
+
+        # Clear fields after composing
+        self.subject_entry.delete(0, tk.END)
+        self.message_text.delete("1.0", tk.END)
+
+    def disable_focus_on_click(self, event):
+        try:
+            event.widget.select_clear()
+        except AttributeError:
+            pass
+        self.root.focus_set()
