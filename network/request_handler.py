@@ -10,7 +10,9 @@ from config.config import config
 # Set up logging
 logger = logging.getLogger(__name__)
 
-BASE_URL = config.get("api", "base_url_local") if not config.getboolean("general", "debug") else config.get("api", "base_url_local")
+is_debug = config.getboolean("general", "debug")
+BASE_URL = config.get("api", "base_url_local") if is_debug \
+    else config.get("api", "base_url")
 
 
 def send_request_for_connection_test():

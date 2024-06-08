@@ -124,7 +124,7 @@ class AudioProcessor:
         """
         Set the input device.
         """
-        logger.info(f"Setting input device to {input_device}")
+        logger.info(f"Setting input device to {input_device['name']}")
         self.input_device = input_device
 
     def get_language(self):

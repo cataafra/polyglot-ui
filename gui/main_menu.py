@@ -2,7 +2,7 @@ import threading
 import tkinter as tk
 import webbrowser
 from PIL import Image, ImageTk
-from pystray import Icon as icon, MenuItem as item, Menu as menu
+from pystray import Icon, MenuItem, Menu
 from tkinter import ttk, PhotoImage
 
 from gui.styles import center_window, color_title_bar, set_theme, setup_styles, toggle_theme
@@ -13,7 +13,6 @@ from config.config import config
 
 class MainMenu:
     def __init__(self, root, audio_processor):
-        self.health_checker = None
         self.root = root
         self.root.title("Polyglot App")
         self.root.iconbitmap("assets/polyglot-icon.ico")
@@ -42,7 +41,6 @@ class MainMenu:
         self.voice_menu = None
         self.status = None
         self.logo = PhotoImage(file="assets/polyglot-logo.png").subsample(4)
-        self.last_device_event_time = 0
 
         # Set up both the main menu and info page
         self.main_frame = None
@@ -71,10 +69,11 @@ class MainMenu:
 
         # Tray icon setup
         self.tray_icon_image = Image.open("assets/polyglot-icon.ico")
-        self.tray_menu = menu(item('Show', self.show_from_tray), item('Exit', self.exit_from_tray))
-        self.tray_icon = icon('Polyglot App', self.tray_icon_image, 'Polyglot App', menu=self.tray_menu)
-        self.tray_icon.icon.menu = self.tray_menu
-        self.tray_icon.icon.left_click = self.show_from_tray
+        self.tray_menu = Menu(
+            MenuItem('Launch Dashboard', self.show_from_tray, default=True),
+            MenuItem(f'Start Recording', self.start_recording) if not self.recording
+            else MenuItem(f'Stop Recording', self.stop_recording),
+            MenuItem('Quit Polyglot', self.exit_from_tray))
 
         # Initialize frame for the main menu
         self.main_frame = ttk.Frame(self.root, padding="20")
@@ -309,13 +308,16 @@ class MainMenu:
         event.widget.select_clear()
 
     def hide_window_to_tray(self):
-        self.root.withdraw()
+        self.root.withdraw()  # Hide the Tkinter window
+        self.tray_icon = Icon('Polyglot App', self.tray_icon_image, 'Polyglot App', menu=self.tray_menu)
+        self.tray_icon.icon.menu = self.tray_menu
+        self.tray_icon.icon.left_click = self.show_from_tray
         self.tray_icon.run()
 
-    def show_from_tray(self):
+    def show_from_tray(self, icon=None, item=None):
         self.tray_icon.stop()
-        self.root.after(100, self.root.deiconify)
+        self.root.after(0, self.root.deiconify)  # Show the window
 
-    def exit_from_tray(self):
+    def exit_from_tray(self, icon=None, item=None):
         self.tray_icon.stop()
-        self.root.destroy()
+        self.root.destroy()  # Finally close the application

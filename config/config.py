@@ -1,4 +1,5 @@
 import json
+import os
 
 
 def load_config(filepath):
@@ -22,5 +23,5 @@ class Config:
         return self.get(section, key).lower() in ['true', '1', 'yes', 'y']
 
 
-config_path = "config/config.json"
+config_path = 'config.json'
 config = Config(config_path)
