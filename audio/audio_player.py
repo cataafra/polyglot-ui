@@ -4,6 +4,7 @@ import queue
 import threading
 import logging
 from audio.audio_utils import get_vb_audio_device_index
+from config.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +72,14 @@ class AudioPlayer:
 
     def play_audio_stream(self, audio_stream, output_device):
         """
-        Play an audio stream.
+        Play an audio stream using PyAudio.
         """
         try:
-            stream = self.pyaudio_instance.open(format=pyaudio.paInt16, channels=1, rate=16000,
+            logger.info(f"Playing audio stream...")
+            channels = config.getint("audio", "channels")
+            sample_rate = config.getint("audio", "sample_rate")
+
+            stream = self.pyaudio_instance.open(format=pyaudio.paInt16, channels=channels, rate=sample_rate,
                                                 output=True, output_device_index=output_device)
             wave_file = wave.open(audio_stream, 'rb')
             data = wave_file.readframes(1024)
@@ -83,6 +88,7 @@ class AudioPlayer:
                 data = wave_file.readframes(1024)
             stream.stop_stream()
             stream.close()
+            logger.info("Audio playback complete.")
         except Exception as e:
             logger.error(f"Error during audio playback: {str(e)}")
 

@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from config.config import config
 
 
-def setup_logger(to_file=False):
+def setup_logger():
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)  # Set to INFO or WARNING for production
 

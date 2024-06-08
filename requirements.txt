@@ -1,8 +1,10 @@
 customtkinter
-future
 PyAudio
 sounddevice
 webrtcvad
 numpy
 pytest
 requests
+urllib3
+future
+pillow

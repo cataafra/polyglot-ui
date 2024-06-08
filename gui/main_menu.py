@@ -1,7 +1,8 @@
 import threading
 import tkinter as tk
 import webbrowser
-import time
+from PIL import Image, ImageTk
+from pystray import Icon as icon, MenuItem as item, Menu as menu
 from tkinter import ttk, PhotoImage
 
 from gui.styles import center_window, color_title_bar, set_theme, setup_styles, toggle_theme
@@ -24,6 +25,11 @@ class MainMenu:
         self.root.minsize(0, height)
         self.root.resizable(True, True)  # Allow window resizing
         self.root.after(100, self.root.deiconify)  # Display the window after setup
+
+        # Initialize tray icon variables
+        self.tray_icon_image = None
+        self.tray_menu = None
+        self.tray_icon = None
 
         # Initialize key variables
         self.recording = None
@@ -59,6 +65,16 @@ class MainMenu:
 
         # Customize title bar color
         color_title_bar(self.root)
+
+        # Minimize to tray instead of closing
+        self.root.protocol('WM_DELETE_WINDOW', self.hide_window_to_tray)  # Override the close button
+
+        # Tray icon setup
+        self.tray_icon_image = Image.open("assets/polyglot-icon.ico")
+        self.tray_menu = menu(item('Show', self.show_from_tray), item('Exit', self.exit_from_tray))
+        self.tray_icon = icon('Polyglot App', self.tray_icon_image, 'Polyglot App', menu=self.tray_menu)
+        self.tray_icon.icon.menu = self.tray_menu
+        self.tray_icon.icon.left_click = self.show_from_tray
 
         # Initialize frame for the main menu
         self.main_frame = ttk.Frame(self.root, padding="20")
@@ -195,24 +211,27 @@ class MainMenu:
         title_label = ttk.Label(title_frame, text="Information", font=("", 24))
         title_label.grid(column=1, row=0, sticky=tk.SW, padx=(20, 0), pady=(0, 10))
 
+        # Info text
+        info_text = ttk.Label(frame,
+                              text="The Polyglot app was developed with ♥ by @cataafra - " +
+                                   "Catalin Afrasinei \nas part of his Bachelor's Degree in " +
+                                   "Computer Science at the Universitatea Babes-Bolyai. ")
+        info_text.grid(column=0, row=1, sticky=tk.W, padx=0, pady=(10, 10))
+
         # Subtitle for social media section
         social_media_subtitle = ttk.Label(frame, text="Connect with me", font=("", 16))
-        social_media_subtitle.grid(column=0, row=1, sticky=tk.W, padx=0, pady=(30, 10))
+        social_media_subtitle.grid(column=0, row=2, sticky=tk.W, padx=0, pady=(30, 10))
 
         # Social media buttons
         social_media_frame = ttk.Frame(frame)
-        social_media_frame.grid(column=0, row=2, sticky=tk.W, padx=0, pady=(20, 10))
-
-        twitter_button = ttk.Button(social_media_frame, text="Twitter",
-                                    command=lambda: webbrowser.open("https://twitter.com/your_username"))
-        twitter_button.grid(column=0, row=1, sticky=tk.W, padx=(0, 5))
+        social_media_frame.grid(column=0, row=3, sticky=tk.W, padx=0, pady=(10, 10))
 
         linkedin_button = ttk.Button(social_media_frame, text="LinkedIn",
-                                     command=lambda: webbrowser.open("https://linkedin.com/in/your_username"))
-        linkedin_button.grid(column=1, row=1, sticky=tk.W, padx=5)
+                                     command=lambda: webbrowser.open("https://www.linkedin.com/in/cataafra/"))
+        linkedin_button.grid(column=1, row=1, sticky=tk.W, padx=(0, 5))
 
         github_button = ttk.Button(social_media_frame, text="GitHub",
-                                   command=lambda: webbrowser.open("https://github.com/your_username"))
+                                   command=lambda: webbrowser.open("https://github.com/cataafra"))
         github_button.grid(column=2, row=1, sticky=tk.W, padx=5)
 
         # Back button
@@ -288,3 +307,15 @@ class MainMenu:
         selected_voice = self.voice_var.get()
         self.update_processor_settings('voice', selected_voice)
         event.widget.select_clear()
+
+    def hide_window_to_tray(self):
+        self.root.withdraw()
+        self.tray_icon.run()
+
+    def show_from_tray(self):
+        self.tray_icon.stop()
+        self.root.after(100, self.root.deiconify)
+
+    def exit_from_tray(self):
+        self.tray_icon.stop()
+        self.root.destroy()

@@ -22,14 +22,19 @@ class AudioProcessor:
         logger.info("Initializing AudioProcessor...")
 
         self.audio_player = AudioPlayer()
+
         self.input_device = input_device
+
         self.language = language
         self.speaker_id = speaker_id
+
         self.vad = webrtcvad.Vad(config.getint("audio", "vad_aggressiveness"))
         self.pause_counter = 0
+
         self.samplerate = config.getint("audio", "sample_rate")
         self.frame_duration = config.getint("audio", "frame_duration_ms")
         self.blocksize = int(self.samplerate * self.frame_duration / 1000)
+
         self.audio_queue = queue.Queue()
         self.buffer = np.array([], dtype=np.int16)
 
@@ -64,7 +69,7 @@ class AudioProcessor:
             self.pause_counter += 1
             if self.pause_counter >= self.samplerate // self.blocksize:
                 if len(self.buffer) > 0:
-                    logger.debug("Speech ended, adding audio data to queue for processing")
+                    logger.info("Speech ended, adding audio data to queue for processing.")
                     self.audio_queue.put(self.buffer.tobytes())
                     self.buffer = np.array([], dtype=np.int16)
                 self.pause_counter = 0
