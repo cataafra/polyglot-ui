@@ -20,6 +20,8 @@ class AudioPlayer:
         self.pyaudio_instance = pyaudio.PyAudio()
         self.sequence_number = 0
         self.is_playing = False
+        self.channels = config.getint("audio", "channels")
+        self.sample_rate = config.getint("audio", "sample_rate")
 
     def start_player(self):
         if not self.is_playing:
@@ -76,10 +78,7 @@ class AudioPlayer:
         """
         try:
             logger.info(f"Playing audio stream...")
-            channels = config.getint("audio", "channels")
-            sample_rate = config.getint("audio", "sample_rate")
-
-            stream = self.pyaudio_instance.open(format=pyaudio.paInt16, channels=channels, rate=sample_rate,
+            stream = self.pyaudio_instance.open(format=pyaudio.paInt16, channels=self.channels, rate=self.sample_rate,
                                                 output=True, output_device_index=output_device)
             wave_file = wave.open(audio_stream, 'rb')
             data = wave_file.readframes(1024)

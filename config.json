@@ -8,7 +8,7 @@
     "base_url": "https://ec2-16-171-104-203.eu-north-1.compute.amazonaws.com/",
     "base_url_local": "http://localhost:80/",
     "health_endpoint": "health/",
-    "process_endpoint": "process/"
+    "process_endpoint": "process_memory/"
   },
   "audio": {
     "sample_rate": 16000,

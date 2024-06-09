@@ -17,11 +17,12 @@ BASE_URL = config.get("api", "base_url_local") if is_debug \
 
 def send_request_for_connection_test():
     """ Check if the server is running and can be reached."""
-    url = BASE_URL + config.get("api", "health_endpoint")
     logger.info("Testing connection to server...")
+    url = BASE_URL + config.get("api", "health_endpoint")
     try:
-        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
-        response = requests.get(url, verify=False)
+        if is_debug:
+            urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+        response = requests.get(url, verify=not is_debug)
 
         if response.status_code == 200 and response.json()["status"]:
             logger.info("Connection test successful")
@@ -35,10 +36,12 @@ def send_request_for_connection_test():
 
 
 def send_request_for_processing(audio_data, language, speaker_id):
-    """ Send audio data to the server for processing and return the response."""
+    """
+    Send audio data to the server for processing and return the response.
+    In-memory, but can also save the response to disk if flag is set in the config.
+    """
     url = BASE_URL + config.get("api", "process_endpoint")
     save_to_disk = config.getboolean("audio", "save_to_disk")
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 
     # Prepare the in-memory WAV file
     buffer = BytesIO()
@@ -52,13 +55,15 @@ def send_request_for_processing(audio_data, language, speaker_id):
     files = {'file': ('audio.wav', buffer, 'audio/wav')}
     data = {'language': language, 'speaker_id': str(speaker_id)}
 
-    urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
-    response = requests.post(url, files=files, data=data, verify=False)
+    if is_debug:
+        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+    response = requests.post(url, files=files, data=data, verify=not is_debug)
     if response.status_code == 200:
         logger.info("Translated audio successfully received.")
 
         if save_to_disk:
-            output_filename = f'C:/Users/afrca/Desktop/School/Licenta/polyglot-tkinter-app/responses/response_{timestamp}.wav'
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            output_filename = f'/responses/response_{timestamp}.wav'
             with open(output_filename, "wb") as out_f:
                 out_f.write(response.content)
 

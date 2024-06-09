@@ -74,9 +74,9 @@ class AudioProcessor:
                     self.buffer = np.array([], dtype=np.int16)
                 self.pause_counter = 0
 
-    def record_audio_vad(self):
+    def record_audio(self):
         """
-        Start recording audio using VAD.
+        Start recording audio using Sounddevice.
         """
         logger.info(f"Starting audio recording...")
         try:
@@ -101,7 +101,7 @@ class AudioProcessor:
         self.audio_player.start_player()
         self.processing_thread = threading.Thread(target=self.process_audio, daemon=True)
         self.processing_thread.start()
-        self.record_audio_vad()
+        self.record_audio()
 
     def stop_recording(self):
         """

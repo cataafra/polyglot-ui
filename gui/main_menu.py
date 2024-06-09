@@ -268,7 +268,7 @@ class MainMenu:
         self.message_text = tk.Text(email_frame, height=3)
         self.message_text.grid(column=0, row=3, sticky=tk.EW)
 
-        send_button = ttk.Button(email_frame, text="Send us an email ▶", command=self.send_email)
+        send_button = ttk.Button(email_frame, text="Send us an email", command=self.send_email)
         send_button.grid(column=0, row=4, sticky=tk.E, pady=(10, 0))
 
     def open_info(self):
@@ -359,7 +359,7 @@ class MainMenu:
         body = body.replace(' ', '%20').replace('\n', '%0A')
 
         # Set your recipient email address here
-        recipient_email = "support@example.com"
+        recipient_email = "support@polyglot.com"
 
         # Create the mailto URL
         url = f"mailto:{recipient_email}?subject={subject}&body={body}"
