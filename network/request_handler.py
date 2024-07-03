@@ -20,9 +20,8 @@ def send_request_for_connection_test():
     logger.info("Testing connection to server...")
     url = BASE_URL + config.get("api", "health_endpoint")
     try:
-        if is_debug:
-            urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
-        response = requests.get(url, verify=not is_debug)
+        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+        response = requests.get(url, verify=False)
 
         if response.status_code == 200 and response.json()["status"]:
             logger.info("Connection test successful")
@@ -55,9 +54,10 @@ def send_request_for_processing(audio_data, language, speaker_id):
     files = {'file': ('audio.wav', buffer, 'audio/wav')}
     data = {'language': language, 'speaker_id': str(speaker_id)}
 
-    if is_debug:
-        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
-    response = requests.post(url, files=files, data=data, verify=not is_debug)
+
+    urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+    response = requests.post(url, files=files, data=data, verify=is_debug)
+
     if response.status_code == 200:
         logger.info("Translated audio successfully received.")
 
