@@ -1,4 +1,5 @@
 import wave
+import uuid
 from io import BytesIO
 import requests
 import urllib3
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 is_debug = config.getboolean("general", "debug")
 BASE_URL = config.get("api", "base_url_local") if is_debug \
     else config.get("api", "base_url")
+SESSION_ID = str(uuid.uuid4())
 
 
 def send_request_for_connection_test():
@@ -42,6 +44,8 @@ def send_request_for_processing(audio_data, language, speaker_id):
     """
     url = BASE_URL + config.get("api", "process_endpoint")
     save_to_disk = config.getboolean("audio", "save_to_disk")
+    semantic_cache = config.get("semantic_cache") or {}
+    semantic_cache_enabled = str(semantic_cache.get("enabled", "false")).lower() in ["true", "1", "yes", "y"]
 
     # Prepare the in-memory WAV file
     buffer = BytesIO()
@@ -53,13 +57,27 @@ def send_request_for_processing(audio_data, language, speaker_id):
     buffer.seek(0)  # Rewind the buffer to the start
 
     files = {'file': ('audio.wav', buffer, 'audio/wav')}
-    data = {'language': language, 'speaker_id': str(speaker_id)}
-
+    data = {
+        'language': language,
+        'speaker_id': str(speaker_id),
+        'session_id': SESSION_ID,
+        'source_language': semantic_cache.get("source_language", "auto"),
+        'domain': semantic_cache.get("domain", "general"),
+        'privacy_level': semantic_cache.get("privacy_level", "transient"),
+        'use_semantic_cache': str(semantic_cache_enabled).lower(),
+        'cache_strategy': semantic_cache.get("strategy", "context"),
+    }
     if is_debug:
         urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
     response = requests.post(url, files=files, data=data, verify=not is_debug)
     if response.status_code == 200:
         logger.info("Translated audio successfully received.")
+        logger.info(
+            "Semantic cache: %s, strategy: %s, similarity: %s",
+            response.headers.get("X-Polyglot-Cache"),
+            response.headers.get("X-Polyglot-Cache-Strategy"),
+            response.headers.get("X-Polyglot-Similarity"),
+        )
 
         if save_to_disk:
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
