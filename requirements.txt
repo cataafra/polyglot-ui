@@ -4,8 +4,10 @@ sounddevice
 webrtcvad
 numpy
 pytest
+pytest-mock
 requests
 urllib3
 future
 pillow
 pystray
+sv-ttk

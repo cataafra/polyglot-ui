@@ -1,32 +1,50 @@
 {
   "general": {
-    "debug": "true",
-    "save_logs": "false",
+    "debug": true,
+    "save_logs": true,
     "log_file": "logs/polyglot.log"
   },
   "api": {
-    "base_url": "https://ec2-16-171-104-203.eu-north-1.compute.amazonaws.com/",
-    "base_url_local": "http://localhost:443/",
+    "profile": "local",
+    "profiles": {
+      "local": {
+        "base_url": "https://localhost/",
+        "verify_ssl": false
+      },
+      "aws": {
+        "base_url": "https://ec2-16-171-104-203.eu-north-1.compute.amazonaws.com/",
+        "verify_ssl": true
+      },
+      "custom": {
+        "base_url": "https://localhost/",
+        "verify_ssl": false
+      }
+    },
     "health_endpoint": "health/",
-    "process_endpoint": "process_memory/"
+    "process_endpoint": "process_memory/",
+    "timeout_seconds": 120
   },
   "semantic_cache": {
-    "enabled": "true",
+    "enabled": true,
     "source_language": "auto",
-    "domain": "general",
+    "domain": "demo",
     "privacy_level": "transient",
     "strategy": "context"
+  },
+  "demo": {
+    "enabled": false,
+    "output_mode": "speakers",
+    "save_artifacts": true
   },
   "audio": {
     "sample_rate": 16000,
     "channels": 1,
     "frame_duration_ms": 30,
-    "vad_aggressiveness": 3,
-    "save_to_disk": "false"
+    "vad_aggressiveness": 3
   },
   "gui": {
     "main_menu": {
-      "window_size": "800x500",
+      "window_size": "900x660",
       "title": "Polyglot App"
     },
     "splash_screen": {
