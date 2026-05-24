@@ -14,7 +14,12 @@ def test_load_settings_accepts_booleans_and_profiles(tmp_path):
               "local": {"base_url": "https://localhost/", "verify_ssl": "false"}
             }
           },
-          "semantic_cache": {"enabled": "true", "strategy": "context"}
+          "semantic_cache": {
+            "enabled": "true",
+            "strategy": "context",
+            "source_language": "ron",
+            "use_transcript_memory": "true"
+          }
         }
         """,
         encoding="utf-8",
@@ -27,6 +32,8 @@ def test_load_settings_accepts_booleans_and_profiles(tmp_path):
     assert settings.api.active_profile("local").base_url == "https://localhost/"
     assert settings.api.active_profile("local").verify_ssl is False
     assert settings.semantic_cache.enabled is True
+    assert settings.semantic_cache.source_language == "ron"
+    assert settings.semantic_cache.use_transcript_memory is True
 
 
 def test_runtime_updates_and_resets_session():
@@ -42,6 +49,8 @@ def test_runtime_updates_and_resets_session():
         privacy_level="private",
         target_language="ron",
         speaker_id="2",
+        source_language="ron",
+        use_transcript_memory=True,
     )
     runtime.reset_session()
 
@@ -52,4 +61,6 @@ def test_runtime_updates_and_resets_session():
     assert runtime.privacy_level == "private"
     assert runtime.target_language == "ron"
     assert runtime.speaker_id == "2"
+    assert runtime.source_language == "ron"
+    assert runtime.use_transcript_memory is True
     assert runtime.session_id != original_session

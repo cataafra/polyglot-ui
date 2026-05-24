@@ -24,10 +24,12 @@ class FakeSession:
         return FakeResponse(
             payload={
                 "status": True,
-                "model_loaded": True,
-                "processor_loaded": True,
-                "device": "cpu",
-                "semantic_memory": {"enabled": True, "mode": "audio"},
+                "details": {
+                    "model_loaded": True,
+                    "processor_loaded": True,
+                    "device": "cpu",
+                    "semantic_memory": {"enabled": True, "mode": "audio+transcript"},
+                },
             }
         )
 
@@ -38,11 +40,16 @@ class FakeSession:
             headers={
                 "X-Polyglot-Cache": "hit",
                 "X-Polyglot-Cache-Strategy": "exact",
+                "X-Polyglot-Cache-Layer": "text_exact",
                 "X-Polyglot-Similarity": "1.000000",
+                "X-Polyglot-Text-Similarity": "1.000000",
                 "X-Polyglot-Lookup-Time": "0.0500",
+                "X-Polyglot-Transcript-Time": "0.2500",
                 "X-Polyglot-Inference-Time": "0.0000",
-                "X-Polyglot-Decision": "exact audio fingerprint match",
+                "X-Polyglot-Decision": "normalized transcript match",
                 "X-Polyglot-Translation-Id": "abc",
+                "X-Polyglot-Source-Transcript": "C%C3%A2ine%21",
+                "X-Polyglot-Normalized-Text": "caine",
             },
         )
 
@@ -57,7 +64,7 @@ def test_health_parses_semantic_memory_status():
     assert health.model_loaded is True
     assert health.processor_loaded is True
     assert health.semantic_memory_enabled is True
-    assert health.semantic_memory_mode == "audio"
+    assert health.semantic_memory_mode == "audio+transcript"
 
 
 def test_translate_builds_request_and_parses_cache_headers():
@@ -71,9 +78,11 @@ def test_translate_builds_request_and_parses_cache_headers():
             target_language="ron",
             speaker_id="0",
             session_id="session-a",
+            source_language="ron",
             domain="demo",
             use_semantic_cache=True,
             cache_strategy="context",
+            use_transcript_memory=True,
         )
     )
 
@@ -81,11 +90,18 @@ def test_translate_builds_request_and_parses_cache_headers():
     assert url == "https://localhost/process_memory/"
     assert kwargs["data"]["language"] == "ron"
     assert kwargs["data"]["session_id"] == "session-a"
+    assert kwargs["data"]["source_language"] == "ron"
     assert kwargs["data"]["use_semantic_cache"] == "true"
+    assert kwargs["data"]["use_transcript_memory"] == "true"
     assert response.audio_bytes == b"translated"
     assert response.cache_status == "hit"
     assert response.cache_strategy == "exact"
+    assert response.cache_layer == "text_exact"
     assert response.similarity == 1.0
+    assert response.text_similarity == 1.0
     assert response.lookup_time == 0.05
+    assert response.transcript_time == 0.25
     assert response.inference_time == 0.0
-    assert response.decision == "exact audio fingerprint match"
+    assert response.source_transcript == "Câine!"
+    assert response.normalized_source_text == "caine"
+    assert response.decision == "normalized transcript match"

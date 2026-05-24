@@ -25,6 +25,7 @@ class TranslationRequest:
     privacy_level: str = "transient"
     use_semantic_cache: bool = True
     cache_strategy: str = "context"
+    use_transcript_memory: bool = True
 
 
 @dataclass(frozen=True)
@@ -33,9 +34,14 @@ class TranslationResponse:
     cache_status: str = "unknown"
     cache_strategy: str = "unknown"
     similarity: float | None = None
+    text_similarity: float | None = None
     lookup_time: float | None = None
+    transcript_time: float | None = None
     inference_time: float | None = None
     total_time: float | None = None
+    cache_layer: str = "unknown"
+    source_transcript: str = ""
+    normalized_source_text: str = ""
     decision: str = ""
     translation_id: str = ""
     raw_headers: dict[str, str] = field(default_factory=dict)

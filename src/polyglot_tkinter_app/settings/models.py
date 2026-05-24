@@ -36,7 +36,8 @@ class ApiSettings:
 @dataclass(frozen=True)
 class SemanticCacheSettings:
     enabled: bool = True
-    source_language: str = "auto"
+    source_language: str = "ron"
+    use_transcript_memory: bool = True
     domain: str = "demo"
     privacy_level: str = "transient"
     strategy: str = "context"
@@ -84,6 +85,7 @@ class RuntimeState:
     semantic_cache_enabled: bool = True
     cache_strategy: str = "context"
     source_language: str = "auto"
+    use_transcript_memory: bool = True
     domain: str = "demo"
     privacy_level: str = "transient"
     session_id: str = field(default_factory=lambda: str(uuid4()))
@@ -101,6 +103,7 @@ class RuntimeState:
             semantic_cache_enabled=settings.semantic_cache.enabled,
             cache_strategy=settings.semantic_cache.strategy,
             source_language=settings.semantic_cache.source_language,
+            use_transcript_memory=settings.semantic_cache.use_transcript_memory,
             domain=settings.semantic_cache.domain,
             privacy_level=settings.semantic_cache.privacy_level,
         )
@@ -136,6 +139,8 @@ class RuntimeState:
         output_device: Any | None = None,
         target_language: str | None = None,
         speaker_id: str | None = None,
+        source_language: str | None = None,
+        use_transcript_memory: bool | None = None,
     ) -> None:
         if backend_profile is not None:
             self.backend_profile = backend_profile
@@ -153,6 +158,10 @@ class RuntimeState:
             self.target_language = target_language
         if speaker_id is not None:
             self.speaker_id = speaker_id
+        if source_language is not None:
+            self.source_language = source_language
+        if use_transcript_memory is not None:
+            self.use_transcript_memory = use_transcript_memory
 
     def reset_session(self) -> str:
         self.session_id = str(uuid4())

@@ -4,6 +4,7 @@ import logging
 import time
 from io import BytesIO
 from typing import Any
+from urllib.parse import unquote
 
 import requests
 import urllib3
@@ -36,14 +37,15 @@ class TranslationClient:
                 return HealthStatus(online=False, message=f"HTTP {response.status_code}")
 
             payload = response.json()
-            semantic = payload.get("semantic_memory", {}) or {}
+            details = payload.get("details", {}) or {}
+            semantic = payload.get("semantic_memory", {}) or details.get("semantic_memory", {}) or {}
             return HealthStatus(
                 online=bool(payload.get("status", True)),
-                model_loaded=bool(payload.get("model_loaded", False)),
-                processor_loaded=bool(payload.get("processor_loaded", False)),
+                model_loaded=bool(payload.get("model_loaded", details.get("model_loaded", False))),
+                processor_loaded=bool(payload.get("processor_loaded", details.get("processor_loaded", False))),
                 semantic_memory_enabled=bool(semantic.get("enabled", False)),
                 semantic_memory_mode=str(semantic.get("mode", "unknown")),
-                device=str(payload.get("device", "unknown")),
+                device=str(payload.get("device", details.get("device", "unknown"))),
                 message=str(payload.get("message", "")),
             )
         except Exception as exc:
@@ -62,6 +64,7 @@ class TranslationClient:
             "privacy_level": request.privacy_level,
             "use_semantic_cache": str(request.use_semantic_cache).lower(),
             "cache_strategy": request.cache_strategy,
+            "use_transcript_memory": str(request.use_transcript_memory).lower(),
         }
 
         self._disable_warnings_if_needed()
@@ -84,9 +87,14 @@ class TranslationClient:
             cache_status=_header(headers, "X-Polyglot-Cache", "unknown"),
             cache_strategy=_header(headers, "X-Polyglot-Cache-Strategy", request.cache_strategy),
             similarity=_float_or_none(_header(headers, "X-Polyglot-Similarity")),
+            text_similarity=_float_or_none(_header(headers, "X-Polyglot-Text-Similarity")),
             lookup_time=_float_or_none(_header(headers, "X-Polyglot-Lookup-Time")),
+            transcript_time=_float_or_none(_header(headers, "X-Polyglot-Transcript-Time")),
             inference_time=_float_or_none(_header(headers, "X-Polyglot-Inference-Time")),
             total_time=total_time,
+            cache_layer=_header(headers, "X-Polyglot-Cache-Layer", "unknown"),
+            source_transcript=unquote(_header(headers, "X-Polyglot-Source-Transcript", "") or ""),
+            normalized_source_text=unquote(_header(headers, "X-Polyglot-Normalized-Text", "") or ""),
             decision=_header(headers, "X-Polyglot-Decision", ""),
             translation_id=_header(headers, "X-Polyglot-Translation-Id", ""),
             raw_headers=headers,

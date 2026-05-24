@@ -62,6 +62,8 @@ class MainMenu:
         self.voice_var = tk.StringVar(value="Voice 1")
         self.backend_var = tk.StringVar(value=self.runtime.backend_profile)
         self.cache_var = tk.BooleanVar(value=self.runtime.semantic_cache_enabled)
+        self.source_language_var = tk.StringVar(value=self._language_name_for_code(self.runtime.source_language))
+        self.transcript_memory_var = tk.BooleanVar(value=self.runtime.use_transcript_memory)
         self.strategy_var = tk.StringVar(value=self.runtime.cache_strategy)
         self.domain_var = tk.StringVar(value=self.runtime.domain)
         self.privacy_var = tk.StringVar(value=self.runtime.privacy_level)
@@ -233,13 +235,32 @@ class MainMenu:
         output_menu.grid(column=1, row=1, sticky=tk.EW, padx=8, pady=(4, 10))
         output_menu.bind("<<ComboboxSelected>>", self._on_output_selected)
 
+        ttk.Label(self.demo_panel, text="Source Speech").grid(column=2, row=0, sticky=tk.W, padx=(8, 0))
+        source_menu = ttk.Combobox(
+            self.demo_panel,
+            textvariable=self.source_language_var,
+            values=["Auto", *TARGET_LANGUAGES.keys()],
+            state="readonly",
+            style="Custom.TCombobox",
+        )
+        source_menu.grid(column=2, row=1, sticky=tk.EW, padx=(8, 0), pady=(4, 10))
+        source_menu.bind("<<ComboboxSelected>>", self._on_source_language_selected)
+
         cache_check = ttk.Checkbutton(
             self.demo_panel,
             text="Semantic Cache",
             variable=self.cache_var,
             command=self._on_cache_changed,
         )
-        cache_check.grid(column=2, row=1, sticky=tk.W, padx=(8, 0), pady=(4, 10))
+        cache_check.grid(column=0, row=4, sticky=tk.W, padx=(0, 8), pady=(4, 10))
+
+        transcript_check = ttk.Checkbutton(
+            self.demo_panel,
+            text="Transcript Memory",
+            variable=self.transcript_memory_var,
+            command=self._on_transcript_memory_changed,
+        )
+        transcript_check.grid(column=1, row=4, sticky=tk.W, padx=8, pady=(4, 10))
 
         ttk.Label(self.demo_panel, text="Strategy").grid(column=0, row=2, sticky=tk.W, padx=(0, 8))
         strategy_menu = ttk.Combobox(
@@ -262,7 +283,7 @@ class MainMenu:
         privacy_menu = ttk.Combobox(
             self.demo_panel,
             textvariable=self.privacy_var,
-            values=("transient", "session", "private", "persistent"),
+            values=("transient", "private", "internal", "public"),
             state="readonly",
             style="Custom.TCombobox",
         )
@@ -270,17 +291,31 @@ class MainMenu:
         privacy_menu.bind("<<ComboboxSelected>>", self._on_privacy_selected)
 
         metrics = ttk.Frame(self.demo_panel)
-        metrics.grid(column=0, row=4, columnspan=2, sticky=tk.NSEW, pady=(8, 0), padx=(0, 8))
+        metrics.grid(column=0, row=5, columnspan=2, sticky=tk.NSEW, pady=(8, 0), padx=(0, 8))
         metrics.columnconfigure(1, weight=1)
         ttk.Label(metrics, text="Last Translation", style="Accent.TLabel").grid(column=0, row=0, columnspan=2, sticky=tk.W)
-        for index, key in enumerate(("Cache", "Strategy", "Similarity", "Lookup", "Inference", "Total", "Decision")):
+        metric_keys = (
+            "Cache",
+            "Layer",
+            "Strategy",
+            "Similarity",
+            "Text Similarity",
+            "Lookup",
+            "Transcript",
+            "Inference",
+            "Total",
+            "Source Transcript",
+            "Normalized",
+            "Decision",
+        )
+        for index, key in enumerate(metric_keys):
             ttk.Label(metrics, text=f"{key}:").grid(column=0, row=index + 1, sticky=tk.W, pady=1)
-            label = ttk.Label(metrics, text="-", style="Metrics.TLabel")
+            label = ttk.Label(metrics, text="-", style="Metrics.TLabel", wraplength=520)
             label.grid(column=1, row=index + 1, sticky=tk.W, pady=1)
             self.metric_labels[key] = label
 
         actions = ttk.Frame(self.demo_panel)
-        actions.grid(column=2, row=4, sticky=tk.NSEW, pady=(8, 0), padx=(8, 0))
+        actions.grid(column=2, row=5, sticky=tk.NSEW, pady=(8, 0), padx=(8, 0))
         actions.columnconfigure(0, weight=1)
         self.session_label = ttk.Label(actions, text=f"Session: {self.runtime.session_id[:8]}")
         self.session_label.grid(column=0, row=0, sticky=tk.W, pady=(0, 8))
@@ -293,7 +328,7 @@ class MainMenu:
         )
 
         self.event_log = tk.Listbox(self.demo_panel, height=4, activestyle="none")
-        self.event_log.grid(column=0, row=5, columnspan=3, sticky=tk.EW, pady=(12, 0))
+        self.event_log.grid(column=0, row=6, columnspan=3, sticky=tk.EW, pady=(12, 0))
 
     def _setup_record_button(self) -> None:
         self.record_icon = PhotoImage(file=asset_path("record-icon.png")).subsample(2)
@@ -343,7 +378,7 @@ class MainMenu:
             frame,
             text=(
                 "Use Demo Mode to select speaker output, toggle semantic cache, "
-                "inspect cache hits, and compare lookup/inference time."
+                "inspect cache hits, view transcript memory decisions, and compare lookup/inference time."
             ),
             wraplength=720,
             justify=tk.LEFT,
@@ -403,6 +438,12 @@ class MainMenu:
         self.runtime.speaker_id = str(("Voice 1", "Voice 2", "Voice 3").index(self.voice_var.get()))
         self.runtime.semantic_cache_enabled = self.cache_var.get()
         self.runtime.cache_strategy = self.strategy_var.get()
+        if self.runtime.demo_enabled:
+            self.runtime.source_language = self._language_code_for_name(self.source_language_var.get())
+            self.runtime.use_transcript_memory = self.transcript_memory_var.get()
+        else:
+            self.runtime.source_language = "auto"
+            self.runtime.use_transcript_memory = False
         self.runtime.domain = self.domain_var.get().strip() or "demo"
         self.runtime.privacy_level = self.privacy_var.get()
         self.flow.update_runtime(self.runtime)
@@ -413,10 +454,14 @@ class MainMenu:
             if self.demo_panel:
                 self.demo_panel.grid()
             self._select_default_demo_output()
+            self.runtime.source_language = self._language_code_for_name(self.source_language_var.get())
+            self.runtime.use_transcript_memory = self.transcript_memory_var.get()
         else:
             if self.demo_panel:
                 self.demo_panel.grid_remove()
             self._select_default_user_output()
+            self.runtime.source_language = "auto"
+            self.runtime.use_transcript_memory = False
         self.output_var.set(self._device_label(self.runtime.output_device))
         self.flow.update_runtime(self.runtime)
         self._resize_for_mode()
@@ -451,6 +496,14 @@ class MainMenu:
     def _on_cache_changed(self) -> None:
         self.runtime.semantic_cache_enabled = self.cache_var.get()
         logger.info("settings_changed semantic_cache=%s", self.runtime.semantic_cache_enabled)
+
+    def _on_source_language_selected(self, event=None) -> None:
+        self.runtime.source_language = self._language_code_for_name(self.source_language_var.get())
+        logger.info("settings_changed source_language=%s", self.runtime.source_language)
+
+    def _on_transcript_memory_changed(self) -> None:
+        self.runtime.use_transcript_memory = self.transcript_memory_var.get()
+        logger.info("settings_changed transcript_memory=%s", self.runtime.use_transcript_memory)
 
     def _on_strategy_selected(self, event=None) -> None:
         self.runtime.cache_strategy = self.strategy_var.get()
@@ -492,14 +545,21 @@ class MainMenu:
     def _on_translation_completed(self, response: TranslationResponse) -> None:
         self.status_label.config(text="Translated audio received.")
         self.metric_labels["Cache"].config(text=response.cache_status.upper())
+        self.metric_labels["Layer"].config(text=self._layer_label(response.cache_layer))
         self.metric_labels["Strategy"].config(text=response.cache_strategy)
         self.metric_labels["Similarity"].config(text=self._format_float(response.similarity, digits=3))
+        self.metric_labels["Text Similarity"].config(text=self._format_float(response.text_similarity, digits=3))
         self.metric_labels["Lookup"].config(text=self._format_seconds(response.lookup_time))
+        self.metric_labels["Transcript"].config(text=self._format_seconds(response.transcript_time))
         self.metric_labels["Inference"].config(text=self._format_seconds(response.inference_time))
         self.metric_labels["Total"].config(text=self._format_seconds(response.total_time))
+        self.metric_labels["Source Transcript"].config(text=response.source_transcript or "-")
+        self.metric_labels["Normalized"].config(text=response.normalized_source_text or "-")
         self.metric_labels["Decision"].config(text=response.decision or "-")
         self._add_event(
-            f"{response.cache_status.upper()} | lookup {self._format_seconds(response.lookup_time)} | "
+            f"{response.cache_status.upper()} | {self._layer_label(response.cache_layer)} | "
+            f"lookup {self._format_seconds(response.lookup_time)} | "
+            f"transcript {self._format_seconds(response.transcript_time)} | "
             f"inference {self._format_seconds(response.inference_time)}"
         )
 
@@ -569,6 +629,30 @@ class MainMenu:
         if value is None:
             return "-"
         return f"{value:.{digits}f}"
+
+    def _language_code_for_name(self, value: str) -> str:
+        if value == "Auto":
+            return "auto"
+        return TARGET_LANGUAGES.get(value, "auto")
+
+    def _language_name_for_code(self, code: str) -> str:
+        if not code or code == "auto":
+            return "Auto"
+        for name, language_code in TARGET_LANGUAGES.items():
+            if language_code == code:
+                return name
+        return "Auto"
+
+    def _layer_label(self, layer: str) -> str:
+        labels = {
+            "audio_exact": "Audio exact",
+            "text_exact": "Text exact",
+            "text_vector": "Text vector",
+            "audio_vector": "Audio vector",
+            "miss": "AI",
+            "unknown": "Unknown",
+        }
+        return labels.get(layer or "unknown", layer)
 
     def _server_status_text(self) -> str:
         icon = SERVER_ONLINE_ICON if self.health.online else SERVER_OFFLINE_ICON

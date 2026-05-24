@@ -1,3 +1,4 @@
+import logging
 import threading
 
 from polyglot_tkinter_app.api.models import TranslationResponse
@@ -17,10 +18,15 @@ class FakeClient:
             cache_status="hit",
             cache_strategy="exact",
             similarity=1.0,
+            text_similarity=1.0,
             lookup_time=0.01,
+            transcript_time=0.03,
             inference_time=0.0,
             total_time=0.02,
-            decision="exact audio fingerprint match",
+            cache_layer="text_exact",
+            source_transcript="Câine!",
+            normalized_source_text="caine",
+            decision="normalized transcript match",
         )
 
 
@@ -57,9 +63,12 @@ class FakePlayer:
         self.stopped = True
 
 
-def test_translation_flow_submits_wav_and_emits_response():
+def test_translation_flow_submits_wav_and_emits_response(caplog):
+    caplog.set_level(logging.INFO, logger="polyglot_tkinter_app.orchestration.translation_flow")
     runtime = RuntimeState.from_settings(load_settings("missing-config.json"))
     runtime.target_language = "ron"
+    runtime.source_language = "ron"
+    runtime.use_transcript_memory = True
     client = FakeClient()
     player = FakePlayer()
     completed = []
@@ -77,9 +86,15 @@ def test_translation_flow_submits_wav_and_emits_response():
     flow.stop()
 
     assert client.requests[0].target_language == "ron"
+    assert client.requests[0].source_language == "ron"
+    assert client.requests[0].use_transcript_memory is True
     assert client.requests[0].cache_strategy == "context"
     assert completed[0].cache_status == "hit"
+    assert completed[0].cache_layer == "text_exact"
     assert player.enqueued[0][0] == b"translated"
+    assert "Câine!" not in caplog.text
+    assert "caine" not in caplog.text
+    assert "transcript=0.0300s" in caplog.text
 
 
 def test_translation_flow_resend_and_replay_use_cached_bytes():

@@ -26,7 +26,8 @@
   },
   "semantic_cache": {
     "enabled": true,
-    "source_language": "auto",
+    "source_language": "ron",
+    "use_transcript_memory": true,
     "domain": "demo",
     "privacy_level": "transient",
     "strategy": "context"

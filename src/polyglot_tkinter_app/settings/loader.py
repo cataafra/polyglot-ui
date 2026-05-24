@@ -34,7 +34,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     "semantic_cache": {
         "enabled": True,
-        "source_language": "auto",
+        "source_language": "ron",
+        "use_transcript_memory": True,
         "domain": "demo",
         "privacy_level": "transient",
         "strategy": "context",
@@ -87,7 +88,8 @@ def load_settings(filepath: str | Path = "config.json") -> AppSettings:
         ),
         semantic_cache=SemanticCacheSettings(
             enabled=_as_bool(config["semantic_cache"].get("enabled", True)),
-            source_language=str(config["semantic_cache"].get("source_language", "auto")),
+            source_language=str(config["semantic_cache"].get("source_language", "ron")),
+            use_transcript_memory=_as_bool(config["semantic_cache"].get("use_transcript_memory", True)),
             domain=str(config["semantic_cache"].get("domain", "demo")),
             privacy_level=str(config["semantic_cache"].get("privacy_level", "transient")),
             strategy=str(config["semantic_cache"].get("strategy", "context")),

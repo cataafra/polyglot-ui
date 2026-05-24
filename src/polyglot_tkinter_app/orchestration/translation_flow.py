@@ -194,6 +194,7 @@ class TranslationFlow:
                     privacy_level=self.runtime.privacy_level,
                     use_semantic_cache=self.runtime.semantic_cache_enabled,
                     cache_strategy=self.runtime.cache_strategy,
+                    use_transcript_memory=self.runtime.use_transcript_memory,
                 )
             )
             if self._shutdown_event.is_set():
@@ -203,11 +204,15 @@ class TranslationFlow:
             self._save_latest_output(response)
             self.player.enqueue(response.audio_bytes, self.runtime.output_device)
             logger.info(
-                'translation_completed cache=%s strategy=%s similarity=%s lookup=%ss inference=%ss total=%ss decision="%s"',
+                'translation_completed cache=%s layer=%s strategy=%s similarity=%s text_similarity=%s '
+                'lookup=%ss transcript=%ss inference=%ss total=%ss decision="%s"',
                 response.cache_status,
+                response.cache_layer,
                 response.cache_strategy,
                 _fmt(response.similarity),
+                _fmt(response.text_similarity),
                 _fmt(response.lookup_time),
+                _fmt(response.transcript_time),
                 _fmt(response.inference_time),
                 _fmt(response.total_time),
                 response.decision,

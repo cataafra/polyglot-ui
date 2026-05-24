@@ -21,7 +21,7 @@ with SSL verification disabled for the self-signed local certificate.
 ## Modes
 
 - `User`: microphone input, target language/voice selection, automatic VB-Audio Cable output.
-- `Demo`: adds output-device selection, backend profile, cache toggle, cache strategy, domain/privacy fields, session reset, resend/replay controls, cache metrics, and a rolling event log.
+- `Demo`: adds output-device selection, backend profile, source speech language, transcript-memory toggle, cache strategy, domain/privacy fields, session reset, resend/replay controls, cache metrics, and a rolling event log.
 
 ## Demo Flow
 
@@ -29,11 +29,12 @@ with SSL verification disabled for the self-signed local certificate.
 2. Run `python main.py`.
 3. Switch to `Demo`.
 4. Select your microphone and speaker output.
-5. Keep semantic cache enabled with strategy `context`.
-6. Record a phrase and wait for translated playback.
-7. Use `Resend Last Input` to demonstrate a deterministic cache hit.
+5. Set `Source Speech` explicitly, for example Romanian when saying `câine`.
+6. Keep semantic cache and transcript memory enabled with strategy `context`.
+7. Record a phrase and wait for translated playback.
+8. Repeat the same word naturally, or use `Resend Last Input` as a deterministic fallback.
 
-The current backend cache is exact/audio-fingerprint based. Similar spoken phrases are a roadmap item that require transcript embeddings or learned speech embeddings on the backend.
+The metrics card shows whether the response came from AI inference, audio exact reuse, transcript exact reuse, transcript vector reuse, or audio vector reuse, including separate lookup, transcript, inference, and total timing.
 
 ## Tests
 
